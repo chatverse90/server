@@ -7,7 +7,7 @@ const WebSocket = require('ws');
 const http = require('http');
 
 const app = express();
-const PORT = 8080;
+const PORT = 3000;
 
 app.use(cors({ origin: true, credentials: true }));
 app.use(bodyParser.json());
