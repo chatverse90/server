@@ -235,7 +235,7 @@ setInterval(() => {
   for (const roomid of roomDataMap.keys()) {
     fetchAndSendUpdates(roomid);
   }
-}, 2000);
+}, 5000);
 
 
 wss.on('connection', (socket) => {
