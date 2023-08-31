@@ -7,7 +7,7 @@ const WebSocket = require('ws');
 const http = require('http');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT;
 
 app.use(cors({ origin: true, credentials: true }));
 app.use(bodyParser.json());
@@ -416,6 +416,7 @@ app.post('/updateprofilepic', async (req, res) => {
 });
 
 
-server.listen(PORT, () => {
+
+server.listen(PORT, '0.0.0.0', () => {
   console.log('Server listening on port ' + PORT);
 });
