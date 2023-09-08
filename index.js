@@ -7,8 +7,7 @@ const WebSocket = require('ws');
 const http = require('http');
 
 const app = express();
-const PORT = process.env.PORT;
-
+const PORT = 3000;
 app.use(cors({ origin: true, credentials: true }));
 app.use(bodyParser.json());
 
@@ -39,10 +38,10 @@ app.use(userRoutes);
 
 app.get('/fetchData', async (req, res) => {
   try {
-    console.log('fetch data');
+    //console.log('fetch data');
     // Use the Mongoose model to fetch data
     const documents = await RoomModel.find();
-    console.log(documents);
+    //console.log(documents);
     res.json(documents);
   } catch (err) {
     console.error('Error:', err);
@@ -154,7 +153,7 @@ app.post('/addmessageroom', async (req, res) => {
 app.post('/muteuser', async (req, res) => {
 
   const {u,t}=req.body.mutedata;
-  console.log(u, t);
+  //console.log(u, t);
   try {
     // Use a transaction to handle the message insertion
     const session = await mongoose.startSession();
@@ -235,7 +234,7 @@ setInterval(() => {
   for (const roomid of roomDataMap.keys()) {
     fetchAndSendUpdates(roomid);
   }
-}, 5000);
+}, 2000);
 
 
 wss.on('connection', (socket) => {
@@ -246,6 +245,9 @@ wss.on('connection', (socket) => {
   socket.on('message', async (message) => {
     try {
       const jsonData = JSON.parse(message);
+
+      if ('roomId' in jsonData) {
+        //console.log("I AM SENDING DATS");
       const roomid = jsonData.roomId;
 
       // Store the client in the roomDataMap based on the roomid
@@ -256,13 +258,80 @@ wss.on('connection', (socket) => {
 
       // Fetch initial data for this specific room and send it to the client
       fetchAndSendUpdates(roomid);
-    } catch (error) {
+    }
+    if ('room_id' in jsonData) 
+{
+  //console.log("ADDING MESSAFE");
+    const mess=jsonData.mymessage;
+    const roomide=jsonData.room_id;
+    addservermessage(mess,roomide);
+    //console.log("Sucess!");
+}
+
+  }
+    
+    catch (error) {
       console.error('Error parsing JSON:', error);
     }
   });
   
 
 });
+async function addservermessage(msg,rid){
+  try {
+    const  mymessage =msg;
+    const roomid=rid;
+    const currenttime = moment().tz('Asia/Karachi').format('YYYY-MM-DD HH:mm:ss');
+
+    const session = await mongoose.startSession();
+
+    try {
+      session.startTransaction();
+
+      let room = await Message.findOne({ room_id: roomid }).session(session);
+
+      if (!room) {
+        console.error('Room not found');
+        const messagebox = {
+          room_id: roomid,
+          messages: [],
+        };
+
+        const newMessage = new Message(messagebox);
+        await newMessage.save({ session });
+
+        console.log('Created New Chat...');
+      }
+
+      const newmessage = {
+        user_id: mymessage.user_id,
+        content: mymessage.content,
+        time: currenttime,
+      };
+
+      if (room) {
+        room.messages.push(newmessage);
+        await room.save({ session });
+      }
+
+      await session.commitTransaction();
+      session.endSession();
+
+      console.log('Message Inserted!');
+      // res.json({ code: 200, message: 'Message inserted successfully' });
+    console.log('MESSAGE ADDED');
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error Inserting Message!', error);
+    // return res.status(500).send('Error Inserting Message!');
+  }
+}
+
+
 
 
 async function getfromdb( r) {
@@ -394,8 +463,8 @@ app.post('/updateprofilepic', async (req, res) => {
 
   try {
     const { useremail, profileurl } = req.body.imgdata;
-    console.log(useremail);
-    console.log(profileurl);
+    // console.log(useremail);
+    // console.log(profileurl);
 
     const user = await User.findOneAndUpdate(
       { email: useremail }, // Search condition
@@ -416,7 +485,6 @@ app.post('/updateprofilepic', async (req, res) => {
 });
 
 
-
-server.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, () => {
   console.log('Server listening on port ' + PORT);
 });
