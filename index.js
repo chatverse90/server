@@ -95,59 +95,6 @@ app.get('/notifications/:userId', async (req, res) => {
   }
 });
 
-// Add message endpoint
-app.post('/addmessageroom', async (req, res) => {
-  try {
-    const { mymessage, roomid } = req.body.reqdata1;
-    const currenttime = moment().tz('Asia/Karachi').format('YYYY-MM-DD HH:mm:ss');
-
-    const session = await mongoose.startSession();
-
-    try {
-      session.startTransaction();
-
-      let room = await Message.findOne({ room_id: roomid }).session(session);
-
-      if (!room) {
-        console.error('Room not found');
-        const messagebox = {
-          room_id: roomid,
-          messages: [],
-        };
-
-        const newMessage = new Message(messagebox);
-        await newMessage.save({ session });
-
-        console.log('Created New Chat...');
-      }
-
-      const newmessage = {
-        user_id: mymessage.user_id,
-        content: mymessage.content,
-        time: currenttime,
-      };
-
-      if (room) {
-        room.messages.push(newmessage);
-        await room.save({ session });
-      }
-
-      await session.commitTransaction();
-      session.endSession();
-
-      console.log('Message Inserted!');
-      res.json({ code: 200, message: 'Message inserted successfully' });
-    } catch (error) {
-      await session.abortTransaction();
-      session.endSession();
-      throw error;
-    }
-  } catch (error) {
-    console.error('Error Inserting Message!', error);
-    return res.status(500).send('Error Inserting Message!');
-  }
-});
-
 
 
 app.post('/muteuser', async (req, res) => {
@@ -317,7 +264,7 @@ async function addservermessage(msg,rid){
       await session.commitTransaction();
       session.endSession();
 
-      console.log('Message Inserted!');
+      console.log('Message Inserted! Using Sockets');
       // res.json({ code: 200, message: 'Message inserted successfully' });
     console.log('MESSAGE ADDED');
     } catch (error) {
@@ -486,5 +433,5 @@ app.post('/updateprofilepic', async (req, res) => {
 
 
 server.listen(PORT, () => {
-  console.log('Server listening on port ' + PORT);
+  console.log('Sockets Server listening on port ' + PORT);
 });
